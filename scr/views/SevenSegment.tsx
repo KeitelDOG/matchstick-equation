@@ -142,12 +142,13 @@ const useStyles: Function = (height: number, width: number, thickness: number, m
     flex: 1,
     height: '100%',
     width: '100%',
-    backgroundColor: '#77ff7730',
+    border: '1px solid #aaeeaa'
   },
   segmentRemoved: {
     flex: 1,
     height: '100%',
     width: '100%',
-    backgroundColor: '#ffeeee',
+    // backgroundColor: '#ffeeee',
+    border: '1px solid #ffdddd'
   },
 });
