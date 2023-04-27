@@ -40,7 +40,6 @@ export default function EquationBoard(props: PropsType) {
       {equation.getFullParts().map((part : EquationPart, ind: number) => {
 
         if (part instanceof Term) {
-
           return (
             <div key={`digit-${ind}`} style={{ display: 'flex' }}>
               {part.content.map((digit, ind2) => {
