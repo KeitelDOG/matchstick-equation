@@ -4,16 +4,18 @@ import Digit from '../Digit';
 
 type PropsType = {
   digit: Digit,
+  size?: number,
   solMoves?: { [segment: string]: string }
 };
 
 export default function SevenSegment(props: PropsType) {
-  const { digit, solMoves = {} } = props;
+  const { digit, size = 50, solMoves = {} } = props;
   const segments = digit.getSegments();
-  const height: number = 80;
-  const width: number = 48;
-  const thickness: number = Math.floor(height/10);
-  const midPos: number = Math.floor((height/2) - (thickness/2));
+
+  const height: number = Math.floor(size * 2);
+  const width: number = size;
+  const thickness: number = Math.floor(height/20);
+  const midPos: number = Math.floor((height/2)) - Math.floor(thickness/2);
 
   const styles = useStyles(height, width, thickness, midPos);
 
@@ -29,18 +31,26 @@ export default function SevenSegment(props: PropsType) {
             keyStyle = 'segmentRemoved';
           }
 
-          if (segments[segment] === 1 || solMoves[segment]) {
-            return (
-              <div
-                key={`segment-${ind}`}
-                style={{ ...styles[segment], ...styles.segmentWrapper} as React.CSSProperties}
-              >
-                <div style={styles[keyStyle]} data-segment={segment}
-                data-keystyle={keyStyle}>
-                </div>
-              </div>
-            );
-          }
+          return (
+            <div
+              key={`segment-${ind}`}
+              style={{ ...styles[segment], ...styles.segmentWrapper} as React.CSSProperties}
+            >
+              {segments[segment] === 1 && (
+                <>
+                  {['up', 'middle', 'down'].includes(segment) ? (
+                    <img src="/matchstick-hor.png" alt="matchstick red" width={width - thickness*2} height={thickness} style={styles.segment} />
+                  ) : (
+                    <img src="/matchstick-vert.png" alt="matchstick red" width={thickness} height={width - thickness*2} style={styles.segment} />
+                  )}
+                </>
+              )}
+
+              {solMoves[segment] && (
+                <div style={styles[keyStyle]} ></div>
+              )}
+            </div>
+          );
         })}
       </div>
     </div>
@@ -85,7 +95,7 @@ const useStyles: Function = (height: number, width: number, thickness: number, m
   },
   leftUp: {
     paddingTop: thickness,
-    paddingBottom: thickness/2,
+    paddingBottom: thickness,
     position: 'absolute',
     top: 0,
     left: 0,
@@ -121,20 +131,24 @@ const useStyles: Function = (height: number, width: number, thickness: number, m
   },
   segmentWrapper: {
     display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   segment: {
     flex: 1,
-    backgroundColor: '#e44',
-    borderRadius: '20%',
   },
   segmentAdded: {
+    position: 'absolute',
     flex: 1,
-    backgroundColor: '#a00',
-    borderRadius: '20%',
+    height: '100%',
+    width: '100%',
+    border: '1px solid #aaeeaa'
   },
   segmentRemoved: {
     flex: 1,
-    backgroundColor: '#eaeaea',
-    borderRadius: '20%',
+    height: '100%',
+    width: '100%',
+    // backgroundColor: '#ffeeee',
+    border: '1px solid #ffdddd'
   },
 });

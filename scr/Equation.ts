@@ -133,18 +133,15 @@ class Equation {
   }
 
   public isValid () : boolean {
-    const parts = this.getFullParts();
+    const digits = this.getAllDigits();
 
     let isValid = true;
-    for (let i = 0; i < parts.length; i++) {
-      const part = parts[i];
-      if (part instanceof Term) {
-        const num = part.getNum();
-        if (!num) {
+    for (let i = 0; i < digits.length; i++) {
+      const digit = digits[i];
+        if (digit.num === null) {
           isValid = false;
           break;
         }
-      }
     }
 
     return isValid;
@@ -202,7 +199,7 @@ class Equation {
       for (let i = 0; i < dgts.length; i++) {
         // remove 1 segment in digit
         const digit = dgts[i];
-        // console.log('removing on', digit.num);
+        // console.log('removing on -----', digit.num);
 
         const segments = digit.getSegments();
         // only take positions equal to 1
@@ -212,7 +209,7 @@ class Equation {
 
           // 3 operations for permutation on removing segment
           // 1- Remove the segment
-          // 2- if equation is valid, proceed to adding segment at other place
+          // 2- proceed to adding segment at other place
             // (even in same Digit, but not at same position)
           // 3- Add segment back
 
@@ -220,15 +217,13 @@ class Equation {
           digit.removeSegment(pos);
 
           // 2-
-          if (this.isValid()) {
-            sol.moves[i] = {};
-            sol.moves[i][pos] = 'remove';
-            // console.log('valid now adding:', this.print());
-            adding(dgts, [{ digitIndex: i, pos }], count);
-            // removed = null;
-            // reset solution
-            sol.moves = {};
-          }
+          sol.moves[i] = sol.moves[i] || {};
+          sol.moves[i][pos] = 'remove';
+          // console.log('valid now adding:', this.print());
+          adding(dgts, [{ digitIndex: i, pos }], count);
+          // removed = null;
+          // reset solution
+          sol.moves = {};
 
           // 3-
           digit.addSegment(pos);
@@ -275,10 +270,11 @@ class Equation {
 
               // NB: Pass a new copy of solution to avoid referenced change
               // on further manipulation
-              solutions.push(JSON.parse(JSON.stringify(sol)));
+              const newSol = JSON.parse(JSON.stringify(sol));
+              solutions.push(newSol);
 
               console.log('SOLUTION 🎉🎉🎉 :', equationStr);
-              console.log(sol);
+              console.log(newSol);
               // remove last added move from solution object
               sol.content = '';
               delete sol.moves[i][pos];
