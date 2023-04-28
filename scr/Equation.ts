@@ -194,12 +194,16 @@ class Equation {
 
     type RemovedItem = { digitIndex: number, pos: Segment };
 
-    const removing = (dgts : Digit[], count: number) => {
+    let remItems: RemovedItem[] = [];
+
+    let counter = segmentCount;
+
+    const removing = (dgts : Digit[]) => {
       // REMOVE ONLY SEGMENTS THAT EXIST (segment === 1)
       for (let i = 0; i < dgts.length; i++) {
         // remove 1 segment in digit
         const digit = dgts[i];
-        // console.log('removing on -----', digit.num);
+        // console.log('removing on -----', digit.num, i);
 
         const segments = digit.getSegments();
         // only take positions equal to 1
@@ -219,24 +223,35 @@ class Equation {
           // 2-
           sol.moves[i] = sol.moves[i] || {};
           sol.moves[i][pos] = 'remove';
-          // console.log('valid now adding:', this.print());
-          adding(dgts, [{ digitIndex: i, pos }], count);
-          // removed = null;
-          // reset solution
-          sol.moves = {};
+          // add removed item
+          remItems.push({ digitIndex: i, pos });
+
+          // continue to remove N amount of segment until it's N segment
+          if (counter > 1) {
+            counter -= 1;
+            removing(dgts);
+            counter += 1;
+          } else {
+            // console.log('valid now adding:', this.print());
+            adding(dgts, remItems);
+          }
 
           // 3-
+          // remove last move
+          delete sol.moves[i][pos];
+          // remove the last item put as removed
+          remItems.pop();
           digit.addSegment(pos);
         }
       }
     }
 
-    const adding = (dgts: Digit[], removedItems: RemovedItem[], count: number) => {
+    const adding = (dgts: Digit[], removedItems: RemovedItem[]) => {
       // ADD ONLY IN SEGMENTS THAT DOES NOT EXIST (segment === 0)
       for (let i = 0; i < dgts.length; i++) {
         // remove 1 segment in digit
         const digit = dgts[i];
-        // console.log('adding on', digit.num);
+        // console.log('adding on', digit.num, i);
 
         const segments = digit.getSegments();
         // only take positions equal to 0
@@ -258,36 +273,45 @@ class Equation {
           // 1-
           digit.addSegment(pos);
 
+          sol.moves[i] = sol.moves[i] || {};
+          sol.moves[i][pos] = 'add';
+
           // 2-
-          // check equation validity
-          if (this.isValid()) {
-            const equationStr = this.print();
-            // console.log('printed:', equationStr);
-            if (this.evaluate()) {
-              sol.content = equationStr;
-              sol.moves[i] = sol.moves[i] || {};
-              sol.moves[i][pos] = 'add';
+          // continue to add N amount of segment until it's 1 segment
+          if (counter < segmentCount) {
+            counter += 1;
+            adding(dgts, removedItems);
+            counter -= 1;
+          } else {
+            // check equation validity
+            if (this.isValid()) {
+              const equationStr = this.print();
+              // console.log('printed:', equationStr);
+              if (this.evaluate()) {
+                sol.content = equationStr;
 
-              // NB: Pass a new copy of solution to avoid referenced change
-              // on further manipulation
-              const newSol = JSON.parse(JSON.stringify(sol));
-              solutions.push(newSol);
+                // NB: Pass a new copy of solution to avoid referenced change
+                // on further manipulation
+                const newSol = JSON.parse(JSON.stringify(sol));
+                solutions.push(newSol);
 
-              console.log('SOLUTION 🎉🎉🎉 :', equationStr);
-              console.log(newSol);
-              // remove last added move from solution object
-              sol.content = '';
-              delete sol.moves[i][pos];
+                console.log('SOLUTION 🎉🎉🎉 :', equationStr);
+                console.log(newSol);
+                // remove last added move from solution object
+                sol.content = '';
+              }
             }
           }
 
           // 3-
+          // remove last move
+          delete sol.moves[i][pos];
           digit.removeSegment(pos);
         }
       }
     }
 
-    removing(digits, 0);
+    removing(digits);
 
     return solutions;
   }

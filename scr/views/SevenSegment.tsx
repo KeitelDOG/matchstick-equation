@@ -9,12 +9,12 @@ type PropsType = {
 };
 
 export default function SevenSegment(props: PropsType) {
-  const { digit, size = 50, solMoves = {} } = props;
+  const { digit, size = 80, solMoves = {} } = props;
   const segments = digit.getSegments();
 
-  const height: number = Math.floor(size * 2);
+  const height: number = Math.floor(size * 1.8);
   const width: number = size;
-  const thickness: number = Math.floor(height/20);
+  const thickness: number = Math.floor(height/16);
   const midPos: number = Math.floor((height/2)) - Math.floor(thickness/2);
 
   const styles = useStyles(height, width, thickness, midPos);
@@ -142,13 +142,12 @@ const useStyles: Function = (height: number, width: number, thickness: number, m
     flex: 1,
     height: '100%',
     width: '100%',
-    border: '1px solid #aaeeaa'
+    border: '1px dotted #88cc88'
   },
   segmentRemoved: {
     flex: 1,
     height: '100%',
     width: '100%',
-    // backgroundColor: '#ffeeee',
-    border: '1px solid #ffdddd'
+    border: '1px dotted #ddbbbb'
   },
 });

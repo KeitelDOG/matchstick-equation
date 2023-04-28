@@ -7,18 +7,21 @@ export default function Home() {
   const styles = useStyles();
 
   const [equationStr, setEquationStr] = React.useState<string>('');
-  const [display, setDisplay] = React.useState<boolean>(false);
+  const [moveQty, setMoveQty] = React.useState<number>(1);
   const [solutions, setSolutions] = React.useState<Solution[]>([]);
 
   React.useEffect(() => {
       const eq = new Equation(equationStr);
-      const solutions = eq.solve(1);
+      const solutions = eq.solve(moveQty);
       setSolutions(solutions);
-  }, [display, equationStr]);
+  }, [equationStr, moveQty]);
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setEquationStr(event.target.value);
-    setDisplay(false);
+    setEquationStr(event.currentTarget.value);
+  }
+
+  const handleChangeMoveQty = (event: React.SyntheticEvent<HTMLSelectElement>) => {
+    setMoveQty(parseInt(event.currentTarget.value));
   }
 
   /*
@@ -31,10 +34,17 @@ export default function Home() {
   const containerStyle = {
     margin: '20px 0',
     display: 'flex',
-    flexDirection: 'row',
+    flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
   };
+
+  // group by equation string solution
+  const group = solutions.reduce((acc, sol) => {
+    acc[sol.content] = acc[sol.content] || [];
+    acc[sol.content].push(sol);
+    return acc;
+  }, {} as {[key: string]: Solution[] });
 
   return (
     <div style={styles.container}>
@@ -50,6 +60,11 @@ export default function Home() {
           <div style={styles.wrapper}>
             <input style={styles.input} placeholder="enter equation. Ex: 1 + 2 + 3 + 8 = 21" onChange={handleChange} />
           </div>
+          <select style={styles.select} onChange={handleChangeMoveQty}>
+            <option>1</option>
+            <option>2</option>
+            <option>3</option>
+          </select>
           {/*<button style={styles.button} onClick={handleSolve}>Solve</button>*/}
         </div>
 
@@ -57,9 +72,40 @@ export default function Home() {
           <EquationBoard input={equationStr} />
         </div>
 
-        <h3 style={styles.subtitle}>Solutions:</h3>
+        <h3 style={styles.subtitle}>Solutions (moves: {moveQty}):</h3>
 
         {solutions.length ? (
+          Object.keys(group).map((grpKey, grpInd) => {
+            // grpKey is the equation string
+            const sols = group[grpKey];
+            const firstSol = sols.shift() as Solution;
+            return (
+              <div key={`group-${grpInd}`} style={styles.group} >
+                <span style={styles.groupText}>{grpKey}</span>
+                <div
+                  style={containerStyle as React.CSSProperties}
+                >
+                  <EquationBoard input={firstSol.content} moves={sols[0].moves} />
+                </div>
+
+                {/* Multiple combination of stick moves can achieve the same equation.
+                show them later if necessary. Only 1st one is shown for now.
+                sols.map((sol, ind) => (
+                  <div
+                    key={`solution-${ind}`}
+                    style={containerStyle as React.CSSProperties}
+                  >
+                    <EquationBoard input={sol.content} moves={sol.moves} />
+                  </div>
+                ))*/}
+              </div>
+            );
+          })
+        ) : (
+          <span>no solution</span>
+        )}
+
+        {/*solutions.length ? (
           solutions.map((sol, ind) => (
             <div
               key={`solution-${ind}`}
@@ -70,7 +116,7 @@ export default function Home() {
           ))
         ) : (
           <span>no solution</span>
-        )}
+        )*/}
       </main>
     </div>
   )
@@ -122,6 +168,18 @@ const useStyles: Function = () : object => ({
     border: 'none',
     outline: 'none',
   },
+  select: {
+    padding: 5,
+    // flex: 1,
+    // width: 100,
+    height: '100%',
+    color: '#fff',
+    fontSize: 16,
+    backgroundColor: '#44c',
+    border: '1px solid #44c',
+    borderRadius: 5,
+    cursor: 'pointer',
+  },
   button: {
     padding: 5,
     // flex: 1,
@@ -132,6 +190,9 @@ const useStyles: Function = () : object => ({
     backgroundColor: '#44c',
     border: '1px solid #44c',
     borderRadius: 5,
+    cursor: 'pointer',
+  },
+  groupText: {
     cursor: 'pointer',
   }
 });
