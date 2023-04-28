@@ -30,11 +30,11 @@ class Term implements EquationPart {
     return this.content;
   }
 
-  public getNum () : number | null {
+  public getNum () : string | null {
     const numStr = this.content.map(d => d.num).join('');
     const parsed = parseInt(numStr);
     if (!isNaN(parsed)) {
-      return parsed;
+      return numStr;
     }
     return null;
   }

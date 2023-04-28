@@ -36,9 +36,8 @@ export default function EquationBoard(props: PropsType) {
   let digitIndex = -1;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'row'}}>
+    <div style={{ display: 'flex', flexDirection: 'row' }}>
       {equation.getFullParts().map((part : EquationPart, ind: number) => {
-
         if (part instanceof Term) {
           return (
             <div key={`digit-${ind}`} style={{ display: 'flex' }}>
