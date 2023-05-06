@@ -85,7 +85,7 @@ export default function Home() {
                 <div
                   style={containerStyle as React.CSSProperties}
                 >
-                  <EquationBoard input={firstSol.content} moves={sols[0].moves} />
+                  <EquationBoard input={firstSol.content} moves={firstSol.moves} />
                 </div>
 
                 {/* Multiple combination of stick moves can achieve the same equation.

@@ -17,7 +17,7 @@ export type OperationArgument = {
 }
 
 export interface EquationPart {
-  content: Digit[] | string;
+  content: Digit[] | string | null;
   operate(arg: OperationArgument) : OperationArgument;
 }
 
@@ -60,7 +60,8 @@ class Equation {
         continue;
       }
 
-      if (char === '+' || char === '-') {
+      const operators = ['+', '-', 'x', '/'];
+      if (operators.includes(char)) {
         const operator = new Operator(char);
         this.sides[side].push(operator);
         continue;
