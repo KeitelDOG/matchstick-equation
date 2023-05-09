@@ -7,21 +7,33 @@ export default function Home() {
   const styles = useStyles();
 
   const [equationStr, setEquationStr] = React.useState<string>('');
-  const [moveQty, setMoveQty] = React.useState<number>(1);
+  const [stickQty, setStickQty] = React.useState<number>(1);
+  const [operation, setOperation] = React.useState<string>('move');
   const [solutions, setSolutions] = React.useState<Solution[]>([]);
 
   React.useEffect(() => {
       const eq = new Equation(equationStr);
-      const solutions = eq.solve(moveQty);
-      setSolutions(solutions);
-  }, [equationStr, moveQty]);
+      const validationError = eq.validateInput();
+      if (!validationError && eq.isValid()) {
+        console.log('equation is valid');
+        const solutions = eq.solve({
+          operation,
+          stickQty
+        });
+        setSolutions(solutions);
+      }
+  }, [equationStr, operation, stickQty]);
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setEquationStr(event.currentTarget.value);
   }
 
-  const handleChangeMoveQty = (event: React.SyntheticEvent<HTMLSelectElement>) => {
-    setMoveQty(parseInt(event.currentTarget.value));
+  const handleChangeStickQty = (event: React.SyntheticEvent<HTMLSelectElement>) => {
+    setStickQty(parseInt(event.currentTarget.value));
+  }
+
+  const handleChangeOperation = (event: React.SyntheticEvent<HTMLSelectElement>) => {
+    setOperation(event.currentTarget.value);
   }
 
   /*
@@ -56,15 +68,29 @@ export default function Home() {
 
       <main style={styles.main}>
         <h1 style={styles.title}>Matchstick Equation</h1>
+        <div style={styles.optionsContainer}>
+          <div style={styles.option}>
+            <span>operation:</span>
+            <select style={styles.select} onChange={handleChangeOperation}>
+              <option>move</option>
+              <option>remove</option>
+              <option>add</option>
+            </select>
+          </div>
+          <div style={styles.option}>
+            <span>qty:</span>
+            <select style={styles.select} onChange={handleChangeStickQty}>
+              <option>1</option>
+              <option>2</option>
+              <option>3</option>
+            </select>
+          </div>
+        </div>
         <div style={styles.inputContainer}>
           <div style={styles.wrapper}>
             <input style={styles.input} placeholder="enter equation. Ex: 1 + 2 + 3 + 8 = 21" onChange={handleChange} />
           </div>
-          <select style={styles.select} onChange={handleChangeMoveQty}>
-            <option>1</option>
-            <option>2</option>
-            <option>3</option>
-          </select>
+
           {/*<button style={styles.button} onClick={handleSolve}>Solve</button>*/}
         </div>
 
@@ -72,7 +98,7 @@ export default function Home() {
           <EquationBoard input={equationStr} />
         </div>
 
-        <h3 style={styles.subtitle}>Solutions (moves: {moveQty}):</h3>
+        <h3 style={styles.subtitle}>Solutions ({operation} {stickQty} {stickQty > 1 ?'sticks' : 'stick'}):</h3>
 
         {solutions.length ? (
           Object.keys(group).map((grpKey, grpInd) => {
@@ -143,6 +169,16 @@ const useStyles: Function = () : object => ({
   subtitle: {
     color: '#44A',
   },
+  optionsContainer: {
+    padding: 5,
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  option: {
+   marginRight: 40,
+  },
   inputContainer: {
     padding: 5,
     display: 'flex',
@@ -169,13 +205,11 @@ const useStyles: Function = () : object => ({
     outline: 'none',
   },
   select: {
+    marginLeft: 10,
     padding: 5,
-    // flex: 1,
-    // width: 100,
     height: '100%',
-    color: '#fff',
+    color: '#44c',
     fontSize: 16,
-    backgroundColor: '#44c',
     border: '1px solid #44c',
     borderRadius: 5,
     cursor: 'pointer',

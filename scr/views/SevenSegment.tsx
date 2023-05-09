@@ -142,12 +142,12 @@ const useStyles: Function = (height: number, width: number, thickness: number, m
     flex: 1,
     height: '100%',
     width: '100%',
-    border: '1px dotted #88cc88'
+    border: '2px dotted #88cc88'
   },
   segmentRemoved: {
     flex: 1,
     height: '100%',
     width: '100%',
-    border: '1px dotted #ddbbbb'
+    border: '2px dotted #ddbbbb'
   },
 });

@@ -75,15 +75,6 @@ const useStyles: Function = (height: number, width: number, thickness: number, m
     height: thickness,
     width: '100%',
   },
-  down: {
-    paddingLeft: thickness,
-    paddingRight: thickness,
-    position: 'absolute',
-    bottom: '20%',
-    left: 0,
-    height: thickness,
-    width: '100%',
-  },
   middle: {
     paddingLeft: thickness,
     paddingRight: thickness,
@@ -100,6 +91,7 @@ const useStyles: Function = (height: number, width: number, thickness: number, m
     top: 0,
     left: '50%',
     width: thickness,
+    height: '100%',
   },
   minorDiagonal: {
     paddingTop: thickness,
@@ -132,12 +124,12 @@ const useStyles: Function = (height: number, width: number, thickness: number, m
     flex: 1,
     height: '100%',
     width: '100%',
-    border: '1px dotted #88cc88'
+    border: '2px dotted #88cc88'
   },
   segmentRemoved: {
     flex: 1,
     height: '100%',
     width: '100%',
-    border: '1px dotted #ddbbbb'
+    border: '2px dotted #ddbbbb'
   },
 });
