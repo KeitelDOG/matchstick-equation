@@ -1,7 +1,9 @@
-import Term from '../../scr/Term';
-import Operator from '../../scr/Operator';
-import Equation, { EquationPart, SolutionMove } from '../../scr/Equation';
+import Equation, { EquationPart, SolutionMove } from '../Equation';
 import SevenSegment from '../../scr/views/SevenSegment';
+import SymbolSegment from '../../scr/views/SymbolSegment';
+import StickChar from '../StickChar';
+import Digit from '../Digit';
+import Operator from '../Operator';
 
 type PropsType = {
   input: string,
@@ -22,46 +24,36 @@ export default function EquationBoard(props: PropsType) {
     fontSize: 32,
   };
 
-  const validation = equation.validateInput();
-  if (validation) {
+  const validationError = equation.validateInput();
+  if (validationError) {
     return (
       <div style={{ display: 'flex', flexDirection: 'row'}}>
-        <span>{validation}</span>
+        <span>{validationError}</span>
       </div>
     )
   }
 
-  // track indexes for Digits only while traversing
-  // mixed (Terms and Operators in getFullParts() : EquationPart)
-  let digitIndex = -1;
-
   return (
     <div style={{ display: 'flex', flexDirection: 'row' }}>
-      {equation.getFullParts().map((part : EquationPart, ind: number) => {
-        if (part instanceof Term) {
-          return (
-            <div key={`digit-${ind}`} style={{ display: 'flex' }}>
-              {part.content.map((digit, ind2) => {
-                // increment digitIndex only when accessing a digit
-                digitIndex += 1;
-
-                let solMoves = {};
-                if (moves[digitIndex]) {
-                  solMoves = moves[digitIndex];
-                }
-
-                return (
-                  <div key={`segment-${ind2}`} style={{ padding: 5 }} >
-                    <SevenSegment digit={digit} solMoves={solMoves} />
-                  </div>
-                );
-              })}
-            </div>
-          );
+      {equation.getStickChars().map((stickChar : StickChar, ind: number) => {
+        let solMoves = {};
+        if (moves[ind]) {
+          solMoves = moves[ind];
         }
 
-        const operator = part as Operator;
-        return <span key={`left-operator-${ind}`} style={spanStyle as React.CSSProperties}>{operator.content}</span>;
+        return (
+          <div key={`stickchar-${ind}`} style={{ display: 'flex', alignItems: 'center' }}>
+            <div style={{ padding: 5 }} >
+              {stickChar instanceof Digit && (
+                <SevenSegment digit={stickChar} solMoves={solMoves} />
+              )}
+
+              {stickChar instanceof Operator && (
+                <SymbolSegment operator={stickChar} solMoves={solMoves} />
+              )}
+            </div>
+          </div>
+        );
       })}
     </div>
   )

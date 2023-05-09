@@ -1,6 +1,7 @@
 import Term from './Term';
 import Operator from './Operator';
-import Digit, { Segment } from './Digit';
+import Digit from './Digit';
+import StickChar, { Segment } from './StickChar';
 
 export type SolutionMove = {
   [pos: string]: 'add' | 'remove',
@@ -8,7 +9,7 @@ export type SolutionMove = {
 
 export type Solution = {
   content: string,
-  moves: { [digitIndex: string]: SolutionMove }
+  moves: { [index: string]: SolutionMove }
 }
 
 export type OperationArgument = {
@@ -17,19 +18,18 @@ export type OperationArgument = {
 }
 
 export interface EquationPart {
-  content: Digit[] | string;
+  symbol: Digit[] | string | null;
   operate(arg: OperationArgument) : OperationArgument;
 }
 
-type Expression = Array<EquationPart>;
-
-interface Sides {
-  [side: string]: Expression;
+type SolveOption = {
+  operation: string,
+  stickQty: number
 }
 
 class Equation {
   public input: string;
-  private sides: Sides = { left: [], right: [] };
+  private parts: EquationPart[] = [];
 
   public constructor (input: string) {
     this.input = input;
@@ -38,7 +38,6 @@ class Equation {
 
   private parse () : void {
     let arg = '';
-    let side = 'left';
     const chars = this.input.split('');
 
     for (let i = 0; i < chars.length; i++) {
@@ -46,7 +45,7 @@ class Equation {
       // if not a number, push the current arg if any
       if (isNaN(parseInt(char)) && arg) {
         const term = new Term(arg);
-        this.sides[side].push(term);
+        this.parts.push(term);
         arg = '';
       }
 
@@ -54,15 +53,10 @@ class Equation {
         continue;
       }
 
-      if (char === '=') {
-        // change side
-        side = 'right';
-        continue;
-      }
-
-      if (char === '+' || char === '-') {
+      const operators = ['+', '-', 'x', '/', '='];
+      if (operators.includes(char)) {
         const operator = new Operator(char);
-        this.sides[side].push(operator);
+        this.parts.push(operator);
         continue;
       }
 
@@ -73,7 +67,7 @@ class Equation {
         // if it's the last char, and it is a number, push it
         if (i === chars.length - 1) {
           const term = new Term(arg);
-          this.sides[side].push(term);
+          this.parts.push(term);
         }
       }
     }
@@ -110,18 +104,13 @@ class Equation {
     return '';
   }
 
-  public getSides () : Sides {
-    return this.sides;
-  }
-
-  public getFullParts () : Expression {
-    const equal: EquationPart = new Operator('=');
-    return this.sides.left.concat([equal]).concat(this.sides.right);
+  public getParts () : EquationPart[] {
+    return this.parts;
   }
 
   public getAllDigits () : Digit[] {
     let dgts : Digit[] = [];
-    const parts = this.getFullParts();
+    const parts = this.getParts();
     for (let i = 0; i < parts.length; i++) {
       const part = parts[i];
       if (part instanceof Term) {
@@ -132,16 +121,30 @@ class Equation {
     return dgts;
   }
 
+  public getStickChars () : StickChar[] {
+    // return instances of Digit and Operator in equation, NOT Term
+    let stickChars : StickChar[] = [];
+    this.getParts().map(part => {
+      if (part instanceof Term) {
+        stickChars = stickChars.concat(part.getDigits());
+      } else if (part instanceof Operator) {
+        stickChars.push(part);
+      }
+    });
+
+    return stickChars;
+  }
+
   public isValid () : boolean {
-    const digits = this.getAllDigits();
+    const stickChars = this.getStickChars();
 
     let isValid = true;
-    for (let i = 0; i < digits.length; i++) {
-      const digit = digits[i];
-        if (digit.num === null) {
-          isValid = false;
-          break;
-        }
+    for (let i = 0; i < stickChars.length; i++) {
+      const stickChar = stickChars[i];
+      if (stickChar.symbol === null) {
+        isValid = false;
+        break;
+      }
     }
 
     return isValid;
@@ -167,49 +170,69 @@ class Equation {
   }
 
   public evaluate () : boolean {
-    const left = this.evaluateParts(this.sides.left);
-    const right = this.evaluateParts(this.sides.right);
+    const leftParts : EquationPart[] = [];
+    const rightParts : EquationPart[] = [];
+
+    let side = 'left';
+    this.parts.forEach(part => {
+      if (part instanceof Operator && part.symbol === '=') {
+        side = 'right';
+      } else {
+        if (side === 'left') {
+          leftParts.push(part);
+        } else if (side === 'right') {
+          rightParts.push(part);
+        }
+      }
+    });
+
+    if (!leftParts.length || !rightParts.length) {
+      return false;
+    }
+
+    const left = this.evaluateParts(leftParts);
+    const right = this.evaluateParts(rightParts);
     // console.log('left vs right', left, right);
-    return left === right;
+    return  left === right;
   }
 
-  public print () : string {
+  public toString () : string {
     // return equation string like original input string
-    return this.getFullParts().map(part => {
+    return this.getParts().map(part => {
       if (part instanceof Term) {
         return part.getNum();
-      } else {
-        return part.content;
+      } else if (part instanceof Operator) {
+        return part.symbol;
       }
     }).join(' ');
   }
 
-  public solve (segmentCount : number) : Solution[] {
+  public solve (option: SolveOption) : Solution[] {
     // TODO: consider segmentCount to allow moving 2 or more matchsticks
-    const digits = this.getAllDigits();
-    // console.log('digits', digits);
+    const { operation, stickQty } = option;
+
+    const stkChars = this.getStickChars();
+    // console.log('stkChars', stkChars);
 
     const solutions : Solution[] = [];
     let sol: Solution = { content: '', moves: {} };
 
-    type RemovedItem = { digitIndex: number, pos: Segment };
+    type RemovedItem = { index: number, pos: Segment };
 
     let remItems: RemovedItem[] = [];
 
-    let counter = segmentCount;
+    let counter = stickQty;
 
-    const removing = (dgts : Digit[]) => {
+    const removing = (stickChars : StickChar[]) => {
       // REMOVE ONLY SEGMENTS THAT EXIST (segment === 1)
-      for (let i = 0; i < dgts.length; i++) {
-        // remove 1 segment in digit
-        const digit = dgts[i];
-        // console.log('removing on -----', digit.num, i);
-
-        const segments = digit.getSegments();
+      for (let i = 0; i < stickChars.length; i++) {
+        const stickChar = stickChars[i];
+        const segments = stickChar.getSegments();
+        // console.log('removing on -----', stickChar.symbol, i);
         // only take positions equal to 1
         const segPos = Object.keys(segments).filter(s => segments[s] === 1);
         for (let s = 0; s < segPos.length; s++) {
-          const pos = <Segment> segPos[s];
+          const pos = segPos[s] as Segment;
 
           // 3 operations for permutation on removing segment
           // 1- Remove the segment
@@ -218,22 +241,45 @@ class Equation {
           // 3- Add segment back
 
           // 1-
-          digit.removeSegment(pos);
+          stickChar.removeSegment(pos);
 
           // 2-
           sol.moves[i] = sol.moves[i] || {};
           sol.moves[i][pos] = 'remove';
           // add removed item
-          remItems.push({ digitIndex: i, pos });
+          remItems.push({ index: i, pos });
 
           // continue to remove N amount of segment until it's N segment
           if (counter > 1) {
             counter -= 1;
-            removing(dgts);
+            removing(stickChars);
             counter += 1;
           } else {
-            // console.log('valid now adding:', this.print());
-            adding(dgts, remItems);
+            // if operation is remove only, we don't need to add the removed segments
+            if (operation === 'remove') {
+              // search directly for solution now:
+              // check equation validity
+              if (this.isValid()) {
+                const equationStr = this.toString();
+                // console.log('printed:', equationStr);
+                if (this.evaluate()) {
+                  sol.content = equationStr;
+
+                  // NB: Pass a new copy of solution to avoid referenced change
+                  // on further manipulation
+                  const newSol = JSON.parse(JSON.stringify(sol));
+                  solutions.push(newSol);
+
+                  console.log('SOLUTION 🎉🎉🎉 :', equationStr);
+                  console.log(newSol);
+                  // remove last added move from solution object
+                  sol.content = '';
+                }
+              }
+            } else {
+              // console.log('segments removed, now adding:', this.toString());
+              adding(stickChars, remItems);
+            }
           }
 
           // 3-
@@ -241,26 +287,26 @@ class Equation {
           delete sol.moves[i][pos];
           // remove the last item put as removed
           remItems.pop();
-          digit.addSegment(pos);
+          stickChar.addSegment(pos);
         }
       }
     }
 
-    const adding = (dgts: Digit[], removedItems: RemovedItem[]) => {
+    const adding = (stickChars: StickChar[], removedItems: RemovedItem[]) => {
       // ADD ONLY IN SEGMENTS THAT DOES NOT EXIST (segment === 0)
-      for (let i = 0; i < dgts.length; i++) {
-        // remove 1 segment in digit
-        const digit = dgts[i];
-        // console.log('adding on', digit.num, i);
+      for (let i = 0; i < stickChars.length; i++) {
+        // add 1 segment in digit or operator
+        const stickChar = stickChars[i];
+        // console.log('adding on', stickChar.symbol, i);
 
-        const segments = digit.getSegments();
+        const segments = stickChar.getSegments();
         // only take positions equal to 0
         const segPos = Object.keys(segments).filter(s => segments[s] === 0);
         for (let s = 0; s < segPos.length; s++) {
           const pos = <Segment> segPos[s];
 
           // skip from adding segment back to same digit it was removed
-          const isSameDigitSegment : boolean = removedItems.some(ritem => ritem.digitIndex === i && ritem.pos === pos);
+          const isSameDigitSegment : boolean = removedItems.some(ritem => ritem.index === i && ritem.pos === pos);
           if (isSameDigitSegment) {
             continue;
           }
@@ -271,21 +317,21 @@ class Equation {
           // 3- Remove segment back
 
           // 1-
-          digit.addSegment(pos);
+          stickChar.addSegment(pos);
 
           sol.moves[i] = sol.moves[i] || {};
           sol.moves[i][pos] = 'add';
 
           // 2-
           // continue to add N amount of segment until it's 1 segment
-          if (counter < segmentCount) {
+          if (counter < stickQty) {
             counter += 1;
-            adding(dgts, removedItems);
+            adding(stickChars, removedItems);
             counter -= 1;
           } else {
             // check equation validity
             if (this.isValid()) {
-              const equationStr = this.print();
+              const equationStr = this.toString();
               // console.log('printed:', equationStr);
               if (this.evaluate()) {
                 sol.content = equationStr;
@@ -306,12 +352,19 @@ class Equation {
           // 3-
           // remove last move
           delete sol.moves[i][pos];
-          digit.removeSegment(pos);
+          stickChar.removeSegment(pos);
         }
       }
     }
 
-    removing(digits);
+    // if we only add sticks, then skip the removing permutations
+    if (operation === 'add') {
+      adding(stkChars, remItems);
+    } else {
+      // operations move and remove require the removing permutations
+      removing(stkChars);
+    }
+
 
     return solutions;
   }

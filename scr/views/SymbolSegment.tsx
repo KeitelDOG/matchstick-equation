@@ -1,20 +1,20 @@
 import React from 'react';
 import Image from 'next/image'
-import Digit from '../Digit';
+import Operator from '../Operator';
 
 type PropsType = {
-  digit: Digit,
+  operator: Operator,
   size?: number,
   solMoves?: { [segment: string]: string }
 };
 
-export default function SevenSegment(props: PropsType) {
-  const { digit, size = 80, solMoves = {} } = props;
-  const segments = digit.getSegments();
+export default function SymbolSegment(props: PropsType) {
+  const { operator, size = 80, solMoves = {} } = props;
+  const segments = operator.getSegments();
 
-  const height: number = Math.floor(size * 1.8);
+  const height: number = size;
   const width: number = size;
-  const thickness: number = Math.floor(height/16);
+  const thickness: number = Math.floor(height/10);
   const midPos: number = Math.floor((height/2)) - Math.floor(thickness/2);
 
   const styles = useStyles(height, width, thickness, midPos);
@@ -70,16 +70,7 @@ const useStyles: Function = (height: number, width: number, thickness: number, m
     paddingLeft: thickness,
     paddingRight: thickness,
     position: 'absolute',
-    top: 0,
-    left: 0,
-    height: thickness,
-    width: '100%',
-  },
-  down: {
-    paddingLeft: thickness,
-    paddingRight: thickness,
-    position: 'absolute',
-    bottom: 0,
+    top: '20%',
     left: 0,
     height: thickness,
     width: '100%',
@@ -93,41 +84,32 @@ const useStyles: Function = (height: number, width: number, thickness: number, m
     height: thickness,
     width: '100%',
   },
-  leftUp: {
+  vertical: {
     paddingTop: thickness,
     paddingBottom: thickness,
     position: 'absolute',
     top: 0,
-    left: 0,
-    height: '50%',
+    left: '50%',
     width: thickness,
+    height: '100%',
   },
-  leftDown: {
-    paddingTop: thickness/2,
-    paddingBottom: thickness,
-    position: 'absolute',
-    top: '50%',
-    left: 0,
-    height: '50%',
-    width: thickness,
-  },
-  rightUp: {
+  minorDiagonal: {
     paddingTop: thickness,
-    paddingBottom: thickness/2,
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    height: '50%',
-    width: thickness,
-  },
-  rightDown: {
-    paddingTop: thickness/2,
     paddingBottom: thickness,
     position: 'absolute',
-    top: '50%',
-    right: 0,
-    height: '50%',
+    bottom: 0,
+    left: '50%',
     width: thickness,
+    transform: 'rotate(45deg)',
+  },
+  majorDiagonal: {
+    paddingTop: thickness,
+    paddingBottom: thickness,
+    position: 'absolute',
+    bottom: 0,
+    left: '50%',
+    width: thickness,
+    transform: 'rotate(-45deg)',
   },
   segmentWrapper: {
     display: 'flex',
