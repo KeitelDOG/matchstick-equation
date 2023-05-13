@@ -97,9 +97,11 @@ class Equation {
       }
     }
 
+    /*
     if (expressions.length > 2) {
       return 'equation must include only one equal symbol =';
     }
+    */
 
     return '';
   }
@@ -170,30 +172,32 @@ class Equation {
   }
 
   public evaluate () : boolean {
-    const leftParts : EquationPart[] = [];
-    const rightParts : EquationPart[] = [];
+    // equation can be like:
+    // 3 + 0 = 3, or 3 = 3, or 3 = 3 = 3
+    const parts : EquationPart[][] = [];
+    parts.push([] as EquationPart[]);
 
-    let side = 'left';
     this.parts.forEach(part => {
       if (part instanceof Operator && part.symbol === '=') {
-        side = 'right';
+        parts.push([] as EquationPart[]);
       } else {
-        if (side === 'left') {
-          leftParts.push(part);
-        } else if (side === 'right') {
-          rightParts.push(part);
-        }
+        parts[parts.length - 1].push(part);
       }
     });
 
-    if (!leftParts.length || !rightParts.length) {
+    // if parts length is 1, then no = symbol was found (not an equation)
+    if (parts.length <= 1) {
       return false;
     }
 
-    const left = this.evaluateParts(leftParts);
-    const right = this.evaluateParts(rightParts);
+    if (parts.some(ep => !ep.length)) {
+      return false;
+    }
+
+    const values = parts.map(ep => this.evaluateParts(ep));
+
     // console.log('left vs right', left, right);
-    return  left === right;
+    return values.every(val => val === values[0]);
   }
 
   public toString () : string {
@@ -214,14 +218,27 @@ class Equation {
     const stkChars = this.getStickChars();
     // console.log('stkChars', stkChars);
 
+    /*
+    exemple: add 2 sticks to solve 95 / 6 = 15
+    format of solution: {
+      content: '96 / 6 = 16',
+      moves: {
+        '1': { 'leftDown': 'add' },
+        '6': { 'leftDown': 'add' }
+      }
+    }
+    */
     const solutions : Solution[] = [];
     let sol: Solution = { content: '', moves: {} };
 
     type RemovedItem = { index: number, pos: Segment };
-
     let remItems: RemovedItem[] = [];
 
-    let counter = stickQty;
+    // counter represent the qty of match sticks we already have added.
+    // - counter starts at 0 when we only adding sticks
+    // - counter increases by 1 each time we remove a stick
+    //   so we can add them back if using "remove" operation
+    let counter = stickQty - 1;
 
     const removing = (stickChars : StickChar[]) => {
       // REMOVE ONLY SEGMENTS THAT EXIST (segment === 1)
@@ -250,7 +267,7 @@ class Equation {
           remItems.push({ index: i, pos });
 
           // continue to remove N amount of segment until it's N segment
-          if (counter > 1) {
+          if (counter > 0) {
             counter -= 1;
             removing(stickChars);
             counter += 1;
@@ -324,7 +341,7 @@ class Equation {
 
           // 2-
           // continue to add N amount of segment until it's 1 segment
-          if (counter < stickQty) {
+          if (counter < stickQty - 1) {
             counter += 1;
             adding(stickChars, removedItems);
             counter -= 1;
@@ -359,6 +376,8 @@ class Equation {
 
     // if we only add sticks, then skip the removing permutations
     if (operation === 'add') {
+      // if we are only adding, then put the counter to 1
+      counter = 0;
       adding(stkChars, remItems);
     } else {
       // operations move and remove require the removing permutations
